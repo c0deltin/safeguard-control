@@ -27,6 +27,6 @@ deploy:
   extends: .install-sam
   script:
     - sam build
-    - sam deploy --no-fail-on-empty-changeset --paramter_overrides "SMSReceiver=\"$SMS_RECEIVER\""
+    - sam deploy --no-fail-on-empty-changeset --parameter-overrides "SMSReceiver=\"$SMS_RECEIVER\""
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'

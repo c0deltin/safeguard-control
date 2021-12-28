@@ -1,0 +1,205 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: "The backend service for control purposes"
+
+Globals:
+  Function:
+    Runtime: go1.x
+    Timeout: 60
+
+Parameters:
+  Stage:
+    Description: "examples: local, dev, test, prod etc."
+    Type: String
+    Default: prod
+  CapturesBucketName:
+    Type: String
+    Default: safeguard-captures
+  SMSReceiver:
+    Description: "The phone number which receive the security notice."
+    Type: String
+
+Resources:
+  ControlAPI:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref Stage
+      Cors:
+        AllowOrigin: "'*'" # todo
+        AllowMethods: "'OPTIONS,HEAD,GET,PUT,POST'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+
+  ControlTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      PrimaryKey:
+        Name: deviceID
+        Type: String
+
+  CapturesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      KeySchema:
+        - Attributename: deviceID
+          KeyType: HASH
+        - AttributeName: captureDate
+          KeyType: RANGE
+      AttributeDefinitions:
+        - AttributeName: deviceID
+          AttributeType: S
+        - AttributeName: captureDate
+          AttributeType: N
+
+  IsArmedFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: cmd/is_armed/
+      Handler: main
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref ControlTable
+        - CloudWatchPutMetricPolicy
+      Events:
+        GetItem:
+          Type: Api
+          Properties:
+            Path: /{deviceID}/isArmed
+            Method: GET
+            RestApiId: !Ref ControlAPI
+      Environment:
+        Variables:
+          DYNAMODB_ENDPOINT: ""
+          CONTROL_TABLE_NAME: !Ref ControlTable
+
+  ArmFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: cmd/arm/
+      Handler: main
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ControlTable
+        - CloudWatchPutMetricPolicy
+      Events:
+        GetItem:
+          Type: Api
+          Properties:
+            Path: /{deviceID}/arm
+            Method: POST
+            RestApiId: !Ref ControlAPI
+      Environment:
+        Variables:
+          DYNAMODB_ENDPOINT: ""
+          CONTROL_TABLE_NAME: !Ref ControlTable
+
+  DisarmFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: cmd/disarm/
+      Handler: main
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ControlTable
+        - CloudWatchPutMetricPolicy
+      Events:
+        GetItem:
+          Type: Api
+          Properties:
+            Path: /{deviceID}/disarm
+            Method: POST
+            RestApiId: !Ref ControlAPI
+      Environment:
+        Variables:
+          DYNAMODB_ENDPOINT: ""
+          CONTROL_TABLE_NAME: !Ref ControlTable
+
+  CapturesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref CapturesBucketName
+      AccessControl: Private
+      Tags:
+        - Key: name
+          Value: "Safeguard Captures"
+      NotificationConfiguration:
+        LambdaConfigurations:
+          - Event: s3:ObjectCreated:*
+            Function: !GetAtt StoreCaptureFunction.Arn
+
+  LambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref StoreCaptureFunction
+      Action: lambda:InvokeFunction
+      Principal: s3.amazonaws.com
+      SourceArn: !Sub arn:aws:s3:::${CapturesBucket}
+
+  StoreCaptureFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: cmd/store_capture/
+      Handler: main
+      Policies:
+        - AmazonS3ReadOnlyAccess
+        - AmazonSNSFullAccess
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref CapturesTable
+        - CloudWatchPutMetricPolicy
+      Events:
+        GetItem:
+          Type: Api
+          Properties:
+            Path: /{deviceID}/capture
+            Method: POST
+            RestApiId: !Ref ControlAPI
+      Environment:
+        Variables:
+          DYNAMODB_ENDPOINT: ""
+          CONTROL_TABLE_NAME: !Ref CapturesTable
+          SMS_RECEIVER: !Ref SMSReceiver
+
+  GetAllCapturesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: cmd/get_captures/
+      Handler: main
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref CapturesTable
+        - AmazonS3ReadOnlyAccess
+        - CloudWatchPutMetricPolicy
+      Events:
+        GetItem:
+          Type: Api
+          Properties:
+            Path: /{deviceID}/capture
+            Method: GET
+            RestApiId: !Ref ControlAPI
+      Environment:
+        Variables:
+          DYNAMODB_ENDPOINT: ""
+          CONTROL_TABLE_NAME: !Ref CapturesTable
+
+  GetCaptureFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: cmd/get_capture/
+      Handler: main
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref CapturesTable
+        - AmazonS3ReadOnlyAccess
+        - CloudWatchPutMetricPolicy
+      Events:
+        GetItem:
+          Type: Api
+          Properties:
+            Path: /{deviceID}/capture/
+            Method: GET
+            RestApiId: !Ref ControlAPI
+      Environment:
+        Variables:
+          DYNAMODB_ENDPOINT: ""
+          CONTROL_TABLE_NAME: !Ref CapturesTable

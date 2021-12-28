@@ -1,0 +1,7 @@
+version = 0.1
+
+[default.deploy.parameters]
+region = "eu-central-1"
+stack_name = "control"
+capabilities = "CAPABILITY_IAM"
+s3_bucket = "safeguard-lambda-builds"

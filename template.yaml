@@ -114,27 +114,6 @@ Resources:
           DYNAMODB_ENDPOINT: ""
           CONTROL_TABLE_NAME: !Ref DeviceTable
 
-  CapturesBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: !Ref CapturesBucketName
-      AccessControl: Private
-      Tags:
-        - Key: name
-          Value: "Safeguard Captures"
-      NotificationConfiguration:
-        LambdaConfigurations:
-          - Event: s3:ObjectCreated:*
-            Function: !GetAtt StoreCaptureFunction.Arn
-
-  LambdaInvokePermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      FunctionName: !Ref StoreCaptureFunction
-      Action: lambda:InvokeFunction
-      Principal: s3.amazonaws.com
-      SourceArn: !Sub arn:aws:s3:::${CapturesBucket}
-
   StoreCaptureFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -152,6 +131,27 @@ Resources:
           CAPTURE_BUCKET_NAME: !Ref CapturesBucketName
           CONTROL_TABLE_NAME: !Ref CapturesTable
           SMS_RECEIVER: !Ref SMSReceiver
+
+  LambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref StoreCaptureFunction
+      Action: lambda:InvokeFunction
+      Principal: s3.amazonaws.com
+      SourceArn: !Sub arn:aws:s3:::${CapturesBucket}
+
+  CapturesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref CapturesBucketName
+      AccessControl: Private
+      Tags:
+        - Key: name
+          Value: "Safeguard Captures"
+      NotificationConfiguration:
+        LambdaConfigurations:
+          - Event: s3:ObjectCreated:*
+            Function: !GetAtt StoreCaptureFunction.Arn
 
   GetAllCapturesFunction:
     Type: AWS::Serverless::Function

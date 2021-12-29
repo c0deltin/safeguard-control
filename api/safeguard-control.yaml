@@ -11,4 +11,10 @@ tags:
   - name: captures
     description: list captures for a device
 paths:
-  /
+  /:deviceID/arm:
+    post:
+      tags:
+        - devices
+      operationId: ArmDevice
+      parameters:
+        -

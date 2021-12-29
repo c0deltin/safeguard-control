@@ -51,10 +51,10 @@ Resources:
         - AttributeName: captureDate
           AttributeType: N
 
-  IsArmedFunction:
+  GetDeviceFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: cmd/is_armed/
+      CodeUri: cmd/get_device/
       Handler: main
       Policies:
         - DynamoDBReadPolicy:
@@ -64,7 +64,7 @@ Resources:
         GetItem:
           Type: Api
           Properties:
-            Path: /{deviceID}/isArmed
+            Path: /devices/{deviceID}
             Method: GET
             RestApiId: !Ref ControlAPI
       Environment:
@@ -72,10 +72,10 @@ Resources:
           DYNAMODB_ENDPOINT: ""
           CONTROL_TABLE_NAME: !Ref DeviceTable
 
-  ArmFunction:
+  ArmDeviceFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: cmd/arm/
+      CodeUri: cmd/arm_device/
       Handler: main
       Policies:
         - DynamoDBCrudPolicy:
@@ -85,7 +85,7 @@ Resources:
         GetItem:
           Type: Api
           Properties:
-            Path: /{deviceID}/arm
+            Path: /devices/{deviceID}/arm
             Method: POST
             RestApiId: !Ref ControlAPI
       Environment:
@@ -93,10 +93,10 @@ Resources:
           DYNAMODB_ENDPOINT: ""
           CONTROL_TABLE_NAME: !Ref DeviceTable
 
-  DisarmFunction:
+  DisarmDeviceFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: cmd/disarm/
+      CodeUri: cmd/disarm_device/
       Handler: main
       Policies:
         - DynamoDBCrudPolicy:
@@ -106,13 +106,31 @@ Resources:
         GetItem:
           Type: Api
           Properties:
-            Path: /{deviceID}/disarm
+            Path: /devices/{deviceID}/disarm
             Method: POST
             RestApiId: !Ref ControlAPI
       Environment:
         Variables:
           DYNAMODB_ENDPOINT: ""
           CONTROL_TABLE_NAME: !Ref DeviceTable
+
+  StoreCaptureFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: cmd/store_capture/
+      Handler: main
+      Policies:
+        - AmazonS3ReadOnlyAccess
+        - AmazonSNSFullAccess
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref CapturesTable
+      Environment:
+        Variables:
+          DYNAMODB_ENDPOINT: ""
+          CAPTURE_BUCKET_NAME: !Ref CapturesBucketName
+          CONTROL_TABLE_NAME: !Ref CapturesTable
+          SMS_RECEIVER: !Ref SMSReceiver
 
   CapturesBucket:
     Type: AWS::S3::Bucket
@@ -135,31 +153,6 @@ Resources:
       Principal: s3.amazonaws.com
       SourceArn: !Sub arn:aws:s3:::${CapturesBucket}
 
-  StoreCaptureFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: cmd/store_capture/
-      Handler: main
-      Policies:
-        - AmazonS3ReadOnlyAccess
-        - AmazonSNSFullAccess
-        - AWSLambdaBasicExecutionRole
-        - DynamoDBCrudPolicy:
-            TableName: !Ref CapturesTable
-      Events:
-        GetItem:
-          Type: Api
-          Properties:
-            Path: /{deviceID}/capture
-            Method: POST
-            RestApiId: !Ref ControlAPI
-      Environment:
-        Variables:
-          DYNAMODB_ENDPOINT: ""
-          CAPTURE_BUCKET_NAME: !Ref CapturesBucketName
-          CONTROL_TABLE_NAME: !Ref CapturesTable
-          SMS_RECEIVER: !Ref SMSReceiver
-
   GetAllCapturesFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -174,7 +167,7 @@ Resources:
         GetItem:
           Type: Api
           Properties:
-            Path: /{deviceID}/capture
+            Path: /{deviceID}/captures
             Method: GET
             RestApiId: !Ref ControlAPI
       Environment:
@@ -196,7 +189,7 @@ Resources:
         GetItem:
           Type: Api
           Properties:
-            Path: /{deviceID}/capture/
+            Path: /captures/{deviceID}/{captureDate}
             Method: GET
             RestApiId: !Ref ControlAPI
       Environment:

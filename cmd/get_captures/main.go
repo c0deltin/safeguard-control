@@ -40,6 +40,11 @@ func (l *Lambda) handler(r events.APIGatewayProxyRequest) (events.APIGatewayProx
 		captures = append(captures, *x.MarshalToCapture())
 	}
 
+	// prevent returning "null" in api response
+	if captures == nil {
+		captures = []model.Capture{}
+	}
+
 	by, err := json.Marshal(model.CapturesResponse{Captures: captures})
 	if err != nil {
 		log.Printf("[ERROR] failed to marshal response object, err: %v", err)

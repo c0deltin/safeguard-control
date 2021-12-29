@@ -1,9 +1,14 @@
 openapi: 3.0.3
 info:
-  title: Title
-  description: Title
+  title: Safeguard Control
+  description: The API for safeguard-control.
   version: 1.0.0
 servers:
   - url: 'https'
+tags:
+  - name: devices
+    description: options and information about devices
+  - name: captures
+    description: list captures for a device
 paths:
-  
+  /

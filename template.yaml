@@ -59,7 +59,7 @@ Resources:
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Ref DeviceTable
-        - CloudWatchPutMetricPolicy
+        - AWSLambdaBasicExecutionRole
       Events:
         GetItem:
           Type: Api
@@ -80,7 +80,7 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref DeviceTable
-        - CloudWatchPutMetricPolicy
+        - AWSLambdaBasicExecutionRole
       Events:
         GetItem:
           Type: Api
@@ -101,7 +101,7 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref DeviceTable
-        - CloudWatchPutMetricPolicy
+        - AWSLambdaBasicExecutionRole
       Events:
         GetItem:
           Type: Api
@@ -146,7 +146,6 @@ Resources:
         - AWSLambdaBasicExecutionRole
         - DynamoDBCrudPolicy:
             TableName: !Ref CapturesTable
-        - CloudWatchPutMetricPolicy
       Events:
         GetItem:
           Type: Api
@@ -170,7 +169,7 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref CapturesTable
         - AmazonS3ReadOnlyAccess
-        - CloudWatchPutMetricPolicy
+        - AWSLambdaBasicExecutionRole
       Events:
         GetItem:
           Type: Api
@@ -192,7 +191,7 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref CapturesTable
         - AmazonS3ReadOnlyAccess
-        - CloudWatchPutMetricPolicy
+        - AWSLambdaBasicExecutionRole
       Events:
         GetItem:
           Type: Api

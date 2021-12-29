@@ -29,6 +29,14 @@ Resources:
         AllowMethods: "'OPTIONS,HEAD,GET,PUT,POST'"
         AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
 
+  ControlAPIBasePath:
+    Type: AWS::ApiGateway::BasePathMapping
+    Properties:
+      BasePath: api
+      DomainName: codeltin.io #todo
+      RestApiId: !Ref ControlAPI
+      Stage: !Ref Stage
+
   DeviceTable:
     Type: AWS::Serverless::SimpleTable
     Properties:

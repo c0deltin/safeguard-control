@@ -120,9 +120,9 @@ Resources:
       CodeUri: cmd/store_capture/
       Handler: main
       Policies:
+        - AWSLambdaBasicExecutionRole
         - AmazonS3ReadOnlyAccess
         - AmazonSNSFullAccess
-        - AWSLambdaBasicExecutionRole
         - DynamoDBCrudPolicy:
             TableName: !Ref CapturesTable
       Environment:
@@ -151,7 +151,7 @@ Resources:
       FunctionName: !Ref StoreCaptureFunction
       Action: lambda:InvokeFunction
       Principal: s3.amazonaws.com
-      SourceArn: !Sub arn:aws:s3:::${CapturesBucket}
+      SourceArn: !GetAtt CapturesBucket.Arn
 
   GetAllCapturesFunction:
     Type: AWS::Serverless::Function

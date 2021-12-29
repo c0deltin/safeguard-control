@@ -41,7 +41,7 @@ Resources:
     Properties:
       BillingMode: PAY_PER_REQUEST
       KeySchema:
-        - Attributename: deviceID
+        - AttributeName: deviceID
           KeyType: HASH
         - AttributeName: captureDate
           KeyType: RANGE

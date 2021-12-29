@@ -167,7 +167,7 @@ Resources:
         GetItem:
           Type: Api
           Properties:
-            Path: /{deviceID}/captures
+            Path: /captures/{deviceID}
             Method: GET
             RestApiId: !Ref ControlAPI
       Environment:

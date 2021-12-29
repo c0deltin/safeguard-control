@@ -18,6 +18,14 @@ func (c Capture) MarshalToCaptureDB() *CaptureDB {
 	}
 }
 
+type CaptureResponse struct {
+	Capture *Capture `json:"captures"`
+}
+
+type CapturesResponse struct {
+	Captures []Capture `json:"captures"`
+}
+
 type CaptureDB struct {
 	_ struct{} `dynamodbav:"-"`
 

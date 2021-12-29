@@ -116,8 +116,6 @@ Resources:
 
   CapturesBucket:
     Type: AWS::S3::Bucket
-    DependsOn:
-      - LambdaInvokePermission
     Properties:
       BucketName: !Ref CapturesBucketName
       AccessControl: Private

@@ -114,28 +114,10 @@ Resources:
           DYNAMODB_ENDPOINT: ""
           CONTROL_TABLE_NAME: !Ref DeviceTable
 
-  StoreCaptureFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: cmd/store_capture/
-      Handler: main
-      Policies:
-        - AWSLambdaBasicExecutionRole
-        - AmazonS3ReadOnlyAccess
-        - AmazonSNSFullAccess
-        - DynamoDBCrudPolicy:
-            TableName: !Ref CapturesTable
-      Environment:
-        Variables:
-          DYNAMODB_ENDPOINT: ""
-          CAPTURE_BUCKET_NAME: !Ref CapturesBucketName
-          CONTROL_TABLE_NAME: !Ref CapturesTable
-          SMS_RECEIVER: !Ref SMSReceiver
-
   CapturesBucket:
     Type: AWS::S3::Bucket
     DependsOn:
-      - StoreCaptureFunction
+      - LambdaInvokePermission
     Properties:
       BucketName: !Ref CapturesBucketName
       AccessControl: Private
@@ -153,7 +135,25 @@ Resources:
       FunctionName: !Ref StoreCaptureFunction
       Action: lambda:InvokeFunction
       Principal: s3.amazonaws.com
-      SourceArn: !GetAtt CapturesBucket.Arn
+      SourceArn: !Sub arn:aws:s3:::${CapturesBucket}
+
+  StoreCaptureFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: cmd/store_capture/
+      Handler: main
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - AmazonS3ReadOnlyAccess
+        - AmazonSNSFullAccess
+        - DynamoDBCrudPolicy:
+            TableName: !Ref CapturesTable
+      Environment:
+        Variables:
+          DYNAMODB_ENDPOINT: ""
+          CAPTURE_BUCKET_NAME: !Ref CapturesBucketName
+          CONTROL_TABLE_NAME: !Ref CapturesTable
+          SMS_RECEIVER: !Ref SMSReceiver
 
   GetAllCapturesFunction:
     Type: AWS::Serverless::Function

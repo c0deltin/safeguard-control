@@ -24,7 +24,7 @@ func NewDeviceRepository(db dynamodbiface.DynamoDBAPI, table string) *deviceRepo
 
 func (d *deviceRepository) UpdateArmedStatus(id string, armed bool) error {
 	input := dynamodb.UpdateItemInput{
-		ConditionExpression: aws.String("attribute_exists(deviceID)"),
+		ConditionExpression: aws.String("attribute_exists(id)"),
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
 			":isArmed": {
 				BOOL: aws.Bool(armed),

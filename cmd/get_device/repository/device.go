@@ -26,7 +26,7 @@ func NewDeviceRepository(db dynamodbiface.DynamoDBAPI, table string) *deviceRepo
 	}
 }
 
-var ErrEmptyResult = errors.New("result_is_empty")
+var ErrNotFound = errors.New("device_not_found")
 
 func (d *deviceRepository) FindOne(id string) (*model.DeviceDB, error) {
 	input := dynamodb.QueryInput{
@@ -46,7 +46,7 @@ func (d *deviceRepository) FindOne(id string) (*model.DeviceDB, error) {
 	}
 
 	if len(result.Items) == 0 {
-		return nil, ErrEmptyResult
+		return nil, ErrNotFound
 	}
 
 	var device model.DeviceDB

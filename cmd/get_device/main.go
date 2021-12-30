@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/aws/aws-sdk-go/aws/awserr"
+	"errors"
 	"log"
 	"model"
 	"net/http"
@@ -33,11 +33,8 @@ func (l *Lambda) handler(r events.APIGatewayProxyRequest) (events.APIGatewayProx
 	device, err := l.deviceRepository.FindOne(deviceID)
 	if err != nil {
 		var status = http.StatusInternalServerError
-		if aErr, ok := err.(awserr.Error); ok {
-			switch aErr.Code() {
-			case dynamodb.ErrCodeResourceNotFoundException:
-				status = http.StatusNotFound
-			}
+		if errors.Is(err, repository.ErrNotFound) {
+			status = http.StatusNotFound
 		}
 
 		log.Printf("[ERROR] failed to find device %s, err: %v", deviceID, err)

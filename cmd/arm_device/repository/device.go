@@ -30,7 +30,7 @@ func (d *deviceRepository) UpdateArmedStatus(id string, armed bool) error {
 			},
 		},
 		Key: map[string]*dynamodb.AttributeValue{
-			"deviceID": {
+			"id": {
 				S: aws.String(id),
 			},
 		},

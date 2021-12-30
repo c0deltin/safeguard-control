@@ -31,11 +31,11 @@ var ErrNotFound = errors.New("device_not_found")
 func (d *deviceRepository) FindOne(id string) (*model.DeviceDB, error) {
 	input := dynamodb.QueryInput{
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
-			":deviceID": {
+			":id": {
 				S: aws.String(id),
 			},
 		},
-		KeyConditionExpression: aws.String("deviceID = :deviceID"),
+		KeyConditionExpression: aws.String("id = :id"),
 		ReturnConsumedCapacity: aws.String(dynamodb.ReturnConsumedCapacityNone),
 		TableName:              aws.String(d.table),
 	}

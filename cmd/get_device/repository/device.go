@@ -50,7 +50,7 @@ func (d *deviceRepository) FindOne(id string) (*model.DeviceDB, error) {
 	}
 
 	var device model.DeviceDB
-	if err = dynamodbattribute.UnmarshalListOfMaps(result.Items, &device); err != nil {
+	if err = dynamodbattribute.UnmarshalMap(result.Items[0], &device); err != nil {
 		return nil, err
 	}
 

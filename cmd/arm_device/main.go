@@ -33,7 +33,7 @@ func (l *Lambda) handler(r events.APIGatewayProxyRequest) (events.APIGatewayProx
 		var status = http.StatusInternalServerError
 		if aErr, ok := err.(awserr.Error); ok {
 			switch aErr.Code() {
-			case dynamodb.ErrCodeResourceNotFoundException:
+			case dynamodb.ErrCodeResourceNotFoundException, dynamodb.ErrCodeConditionalCheckFailedException:
 				status = http.StatusNotFound
 			}
 		}

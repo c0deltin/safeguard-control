@@ -78,7 +78,7 @@ Resources:
       Environment:
         Variables:
           DYNAMODB_ENDPOINT: ""
-          CONTROL_TABLE_NAME: !Ref DeviceTable
+          DEVICE_TABLE_NAME: !Ref DeviceTable
 
   ArmDeviceFunction:
     Type: AWS::Serverless::Function
@@ -99,7 +99,7 @@ Resources:
       Environment:
         Variables:
           DYNAMODB_ENDPOINT: ""
-          CONTROL_TABLE_NAME: !Ref DeviceTable
+          DEVICE_TABLE_NAME: !Ref DeviceTable
 
   DisarmDeviceFunction:
     Type: AWS::Serverless::Function
@@ -120,7 +120,7 @@ Resources:
       Environment:
         Variables:
           DYNAMODB_ENDPOINT: ""
-          CONTROL_TABLE_NAME: !Ref DeviceTable
+          DEVICE_TABLE_NAME: !Ref DeviceTable
 
   StoreCaptureFunction:
     Type: AWS::Serverless::Function
@@ -137,7 +137,7 @@ Resources:
         Variables:
           DYNAMODB_ENDPOINT: ""
           CAPTURE_BUCKET_NAME: !Ref CapturesBucketName
-          CONTROL_TABLE_NAME: !Ref CapturesTable
+          CAPTURES_TABLE_NAME: !Ref CapturesTable
           SMS_RECEIVER: !Ref SMSReceiver
 
   CapturesBucket:
@@ -181,7 +181,7 @@ Resources:
       Environment:
         Variables:
           DYNAMODB_ENDPOINT: ""
-          CONTROL_TABLE_NAME: !Ref CapturesTable
+          CAPTURES_TABLE_NAME: !Ref CapturesTable
 
   GetCaptureFunction:
     Type: AWS::Serverless::Function
@@ -203,4 +203,4 @@ Resources:
       Environment:
         Variables:
           DYNAMODB_ENDPOINT: ""
-          CONTROL_TABLE_NAME: !Ref CapturesTable
+          CAPTURES_TABLE_NAME: !Ref CapturesTable

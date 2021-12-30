@@ -73,7 +73,7 @@ func main() {
 
 	l := &Lambda{
 		bucket:            bucket.New(os.Getenv("CAPTURE_BUCKET_NAME"), s, config),
-		captureRepository: repository.NewCaptureRepository(db, os.Getenv("CONTROL_TABLE_NAME")),
+		captureRepository: repository.NewCaptureRepository(db, os.Getenv("CAPTURES_TABLE_NAME")),
 		notifier:          notifier.New(s, config).WithPhoneNumber(os.Getenv("SMS_RECEIVER")),
 	}
 

@@ -37,7 +37,7 @@ func (l *Lambda) handler(r events.APIGatewayProxyRequest) (events.APIGatewayProx
 
 	var captures []model.Capture
 	for _, x := range results {
-		captures = append(captures, *x.MarshalToCapture())
+		captures = append(captures, *x.MarshalToRequest())
 	}
 
 	// prevent returning "null" in api response
@@ -69,7 +69,7 @@ func main() {
 	db := dynamodbiface.DynamoDBAPI(dynamodb.New(s, config))
 
 	l := &Lambda{
-		captureRepository: repository.NewCaptureRepository(db, os.Getenv("CONTROL_TABLE_NAME")),
+		captureRepository: repository.NewCaptureRepository(db, os.Getenv("CAPTURES_TABLE_NAME")),
 	}
 
 	lambda.Start(l.handler)

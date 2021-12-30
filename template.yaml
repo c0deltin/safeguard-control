@@ -20,6 +20,17 @@ Parameters:
     Type: String
 
 Resources:
+  AuthorizerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: cmd/auth/
+      Handler: main
+      Policies:
+        - AWSLambdaBasicExecutionRole
+      Environment:
+        Variables:
+          COGNITO_POOL_ID: "TEST" # todo
+
   ControlAPI:
     Type: AWS::Serverless::Api
     Properties:
@@ -28,6 +39,20 @@ Resources:
         AllowOrigin: "'*'" # todo
         AllowMethods: "'OPTIONS,HEAD,GET,PUT,POST'"
         AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+      Auth:
+        Authorizers:
+          AuthorizerFunction:
+            FunctionPayloadType: TOKEN
+            FunctionArn:
+              Fn::GetAtt:
+                - AuthorizerFunction
+                - Arn
+            Identity:
+              Header: Authorization
+              ValidationExpression: Bearer.*
+              ReauthorizeEvery: 5
+            CognitoAuthorizer:
+              UserPoolArn: COGNITO_POOL_ARN # todo
 
   ControlAPIBasePath:
     Type: AWS::ApiGateway::BasePathMapping
@@ -75,6 +100,8 @@ Resources:
             Path: /devices/{deviceID}
             Method: GET
             RestApiId: !Ref ControlAPI
+            Auth:
+              Authorizer: AuthorizerFunction
       Environment:
         Variables:
           DYNAMODB_ENDPOINT: ""
@@ -96,6 +123,8 @@ Resources:
             Path: /devices/{deviceID}/arm
             Method: POST
             RestApiId: !Ref ControlAPI
+            Auth:
+              Authorizer: AuthorizerFunction
       Environment:
         Variables:
           DYNAMODB_ENDPOINT: ""
@@ -117,6 +146,8 @@ Resources:
             Path: /devices/{deviceID}/disarm
             Method: POST
             RestApiId: !Ref ControlAPI
+            Auth:
+              Authorizer: AuthorizerFunction
       Environment:
         Variables:
           DYNAMODB_ENDPOINT: ""
@@ -178,6 +209,8 @@ Resources:
             Path: /captures/{deviceID}
             Method: GET
             RestApiId: !Ref ControlAPI
+            Auth:
+              Authorizer: AuthorizerFunction
       Environment:
         Variables:
           DYNAMODB_ENDPOINT: ""
@@ -200,6 +233,8 @@ Resources:
             Path: /captures/{deviceID}/{captureDate}
             Method: GET
             RestApiId: !Ref ControlAPI
+            Auth:
+              Authorizer: AuthorizerFunction
       Environment:
         Variables:
           DYNAMODB_ENDPOINT: ""

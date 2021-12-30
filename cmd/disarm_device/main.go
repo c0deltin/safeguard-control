@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"log"
 	"net/http"
 	"os"
@@ -29,8 +30,16 @@ func (l *Lambda) handler(r events.APIGatewayProxyRequest) (events.APIGatewayProx
 
 	err := l.deviceRepository.UpdateArmedStatus(deviceID, false)
 	if err != nil {
+		var status = http.StatusInternalServerError
+		if aErr, ok := err.(awserr.Error); ok {
+			switch aErr.Code() {
+			case dynamodb.ErrCodeResourceNotFoundException:
+				status = http.StatusNotFound
+			}
+		}
+
 		log.Printf("[ERROR] failed to disarm device %s, err: %v", deviceID, err)
-		return utils.Error(http.StatusInternalServerError, err.Error()), nil
+		return utils.Error(status, err.Error()), nil
 	}
 
 	return events.APIGatewayProxyResponse{

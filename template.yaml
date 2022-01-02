@@ -115,19 +115,28 @@ Resources:
     Properties:
       QueueName: !Ref ArmQueueName
 
-  ArmQueuePolicy:
-    Type: AWS::IAM::Policy
+  ArmQueueRole:
+    Type: AWS::IAM::Role
     Properties:
-      PolicyName: SafeguardSQS
-      PolicyDocument:
+      AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
           - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
             Action:
-              - sqs:GetQueue*
-              - sqs:SendMessage
-      Roles:
-        - AWSLambdaBasicExecutionRole
+              - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: SafeguardSQS
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:GetQueue*
+                  - sqs:SendMessage
+                Resource: !Sub ${ArmQueue.Arn}
 
   ArmDeviceFunction:
     Type: AWS::Serverless::Function
@@ -138,7 +147,7 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref DeviceTable
         - AWSLambdaBasicExecutionRole
-        - !Ref ArmQueuePolicy
+      Role: !Sub ${ArmQueueRole.Arn}
       Events:
         GetItem:
           Type: Api
@@ -152,6 +161,7 @@ Resources:
         Variables:
           DYNAMODB_ENDPOINT: ""
           DEVICE_TABLE_NAME: !Ref DeviceTable
+          SQS_QUEUE_NAME: !Ref ArmQueue
 
   DisarmDeviceFunction:
     Type: AWS::Serverless::Function
@@ -162,7 +172,7 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref DeviceTable
         - AWSLambdaBasicExecutionRole
-        - !Ref ArmQueuePolicy
+      Role: !Sub ${ArmQueueRole.Arn}
       Events:
         GetItem:
           Type: Api
@@ -176,6 +186,7 @@ Resources:
         Variables:
           DYNAMODB_ENDPOINT: ""
           DEVICE_TABLE_NAME: !Ref DeviceTable
+          SQS_QUEUE_NAME: !Ref ArmQueue
 
   StoreCaptureFunction:
     Type: AWS::Serverless::Function

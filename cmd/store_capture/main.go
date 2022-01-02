@@ -93,7 +93,7 @@ func main() {
 
 	l := &Lambda{
 		bucket:            bucket.New(os.Getenv("CAPTURE_BUCKET_NAME"), s, config),
-		transcoder:        elastictranscoder.New(s, config),
+		transcoder:        elastictranscoder.New(s, config.WithRegion("eu-west-1")),
 		captureRepository: repository.NewCaptureRepository(db, os.Getenv("CAPTURES_TABLE_NAME")),
 		notifier:          notifier.New(s, config).WithPhoneNumber(os.Getenv("SMS_RECEIVER")),
 	}

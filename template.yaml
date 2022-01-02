@@ -162,6 +162,7 @@ Resources:
         - AWSLambdaBasicExecutionRole
         - AmazonS3ReadOnlyAccess
         - AmazonSNSFullAccess
+        - AmazonElasticTranscoderJobsSubmitter
         - DynamoDBCrudPolicy:
             TableName: !Ref CapturesTable
       Environment:

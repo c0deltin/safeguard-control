@@ -49,7 +49,7 @@ func (l *Lambda) handler(e events.S3Event) {
 
 	_, err = l.transcoder.CreateJob(&elastictranscoder.CreateJobInput{
 		Input: &elastictranscoder.JobInput{
-			Container: aws.String(l.bucket.Name()),
+			Container: aws.String("mp4"),
 			FrameRate: aws.String("30"),
 			Key:       aws.String(record.S3.Object.Key),
 		},
@@ -57,7 +57,7 @@ func (l *Lambda) handler(e events.S3Event) {
 			PresetId: aws.String("1351620000001-000010"), // Generic 720p
 			Key:      aws.String(time.Now().String() + ".mp4"),
 		},
-		PipelineId: aws.String("safeguard-transcoder"),
+		PipelineId: aws.String("1641143772054-0e13ey"),
 	})
 
 	if err != nil {

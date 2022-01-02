@@ -11,6 +11,7 @@ import (
 
 type Capture interface {
 	Insert(capture model.CaptureDB) error
+	CountByObjectKey(deviceID, key string) (*int64, error)
 }
 
 type captureRepository struct {
@@ -41,4 +42,27 @@ func (c *captureRepository) Insert(capture model.CaptureDB) error {
 	_, err = c.db.PutItem(&input)
 
 	return err
+}
+
+func (c *captureRepository) CountByObjectKey(deviceID, key string) (*int64, error) {
+	input := dynamodb.QueryInput{
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":deviceID": {
+				S: aws.String(deviceID),
+			},
+			":s3ObjectKey": {
+				S: aws.String(key),
+			},
+		},
+		KeyConditionExpression: aws.String("deviceID = :deviceID AND s3ObjectKey = :s3ObjectKey"),
+		ReturnConsumedCapacity: aws.String(dynamodb.ReturnConsumedCapacityNone),
+		TableName:              aws.String(c.table),
+	}
+
+	result, err := c.db.Query(&input)
+	if err != nil {
+		return nil, err
+	}
+
+	return result.Count, nil
 }

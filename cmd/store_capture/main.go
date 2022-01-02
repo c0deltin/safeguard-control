@@ -4,8 +4,6 @@ import (
 	"codeltin.io/safeguard/control/store-capture/repository"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
-	"github.com/aws/aws-sdk-go/service/elastictranscoder"
-	"github.com/aws/aws-sdk-go/service/elastictranscoder/elastictranscoderiface"
 	"log"
 	"model"
 	"os"
@@ -23,7 +21,6 @@ import (
 
 type Lambda struct {
 	bucket            *bucket.Bucket
-	transcoder        elastictranscoderiface.ElasticTranscoderAPI
 	captureRepository repository.Capture
 	notifier          *notifier.Notifier
 }
@@ -33,55 +30,43 @@ func (l *Lambda) handler(e events.S3Event) {
 		log.Printf("[WARNING] no records for this event")
 	}
 
-	record := e.Records[0]
+	recordKey := e.Records[0].S3.Object.Key
 
-	tags, err := l.bucket.GetObjectTags(record.S3.Object.Key)
+	tags, err := l.bucket.GetObjectTags(recordKey)
 	if err != nil {
-		log.Printf("[ERROR] failed to get object tags for %s, err: %v", record.S3.Object.Key, err)
+		log.Printf("[ERROR] failed to get object tags for %s, err: %v", recordKey, err)
 		return
 	}
 
 	var deviceID *string
 	if deviceID = utils.GetTagValue(model.DeviceIDTag, tags); deviceID == nil {
-		log.Printf("[ERROR] cannot detect deviceID for object %s", record.S3.Object.Key)
+		log.Printf("[ERROR] cannot detect deviceID for object %s", recordKey)
 		return
 	}
 
-	_, err = l.transcoder.CreateJob(&elastictranscoder.CreateJobInput{
-		Input: &elastictranscoder.JobInput{
-			Container: aws.String("mp4"),
-			FrameRate: aws.String("30"),
-			Key:       aws.String(record.S3.Object.Key),
-		},
-		Output: &elastictranscoder.CreateJobOutput{
-			PresetId: aws.String("1351620000001-000010"), // Generic 720p
-			Key:      aws.String(time.Now().String() + ".mp4"),
-		},
-		PipelineId: aws.String("1641143772054-0e13ey"),
+	count, err := l.captureRepository.CountByObjectKey(*deviceID, recordKey)
+	if err != nil || *count > 0 {
+		log.Printf("[ERROR] query failed or item already exists (deviceID: %s, key: %s, err: %v)", *deviceID, recordKey, err)
+		return
+	}
+
+	err = l.captureRepository.Insert(model.CaptureDB{
+		DeviceID:    *deviceID,
+		CaptureDate: time.Now().Unix(),
+		S3ObjectKey: recordKey,
 	})
-
 	if err != nil {
-		log.Printf("[ERROR] failed to create transcoder job, err: %v", err)
+		log.Printf("[ERROR] failed to store capture entry for %s in dynamoDB, err: %v", recordKey, err)
 		return
 	}
 
-	//err = l.captureRepository.Insert(model.CaptureDB{
-	//	DeviceID:    *deviceID,
-	//	CaptureDate: time.Now().Unix(),
-	//	S3ObjectKey: record.S3.Object.Key,
-	//})
-	//if err != nil {
-	//	log.Printf("[ERROR] failed to store capture entry for %s in dynamoDB, err: %v", record.S3.Object.Key, err)
-	//	return
-	//}
-	//
-	//r, err := l.notifier.Send()
-	//if err != nil {
-	//	log.Printf("[ERROR] failed to send notification sms, err: %v", err)
-	//	return
-	//}
+	r, err := l.notifier.Send()
+	if err != nil {
+		log.Printf("[ERROR] failed to send notification sms, err: %v", err)
+		return
+	}
 
-	//log.Printf("[INFO] successfully notified, messageID: %s", *r)
+	log.Printf("[INFO] successfully notified, messageID: %s", *r)
 }
 
 func main() {
@@ -94,7 +79,6 @@ func main() {
 
 	l := &Lambda{
 		bucket:            bucket.New(os.Getenv("CAPTURE_BUCKET_NAME"), s, config),
-		transcoder:        elastictranscoder.New(s, config.WithRegion("eu-west-1")),
 		captureRepository: repository.NewCaptureRepository(db, os.Getenv("CAPTURES_TABLE_NAME")),
 		notifier:          notifier.New(s, config).WithPhoneNumber(os.Getenv("SMS_RECEIVER")),
 	}

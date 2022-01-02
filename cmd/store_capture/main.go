@@ -4,6 +4,8 @@ import (
 	"codeltin.io/safeguard/control/store-capture/repository"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
+	"github.com/aws/aws-sdk-go/service/elastictranscoder"
+	"github.com/aws/aws-sdk-go/service/elastictranscoder/elastictranscoderiface"
 	"log"
 	"model"
 	"os"
@@ -21,6 +23,7 @@ import (
 
 type Lambda struct {
 	bucket            *bucket.Bucket
+	transcoder        elastictranscoderiface.ElasticTranscoderAPI
 	captureRepository repository.Capture
 	notifier          *notifier.Notifier
 }
@@ -44,23 +47,40 @@ func (l *Lambda) handler(e events.S3Event) {
 		return
 	}
 
-	err = l.captureRepository.Insert(model.CaptureDB{
-		DeviceID:    *deviceID,
-		CaptureDate: time.Now().Unix(),
-		S3ObjectKey: record.S3.Object.Key,
+	_, err = l.transcoder.CreateJob(&elastictranscoder.CreateJobInput{
+		Input: &elastictranscoder.JobInput{
+			Container: aws.String(l.bucket.Name()),
+			FrameRate: aws.String("30"),
+			Key:       aws.String(record.S3.Object.Key),
+		},
+		Output: &elastictranscoder.CreateJobOutput{
+			Key: aws.String(time.Now().String() + ".mp4"),
+		},
+		PipelineId: aws.String("safeguard-transcoder"),
 	})
+
 	if err != nil {
-		log.Printf("[ERROR] failed to store capture entry for %s in dynamoDB, err: %v", record.S3.Object.Key, err)
+		log.Printf("[ERROR] failed to create transcoder job, err: %v", err)
 		return
 	}
 
-	r, err := l.notifier.Send()
-	if err != nil {
-		log.Printf("[ERROR] failed to send notification sms, err: %v", err)
-		return
-	}
+	//err = l.captureRepository.Insert(model.CaptureDB{
+	//	DeviceID:    *deviceID,
+	//	CaptureDate: time.Now().Unix(),
+	//	S3ObjectKey: record.S3.Object.Key,
+	//})
+	//if err != nil {
+	//	log.Printf("[ERROR] failed to store capture entry for %s in dynamoDB, err: %v", record.S3.Object.Key, err)
+	//	return
+	//}
+	//
+	//r, err := l.notifier.Send()
+	//if err != nil {
+	//	log.Printf("[ERROR] failed to send notification sms, err: %v", err)
+	//	return
+	//}
 
-	log.Printf("[INFO] successfully notified, messageID: %s", *r)
+	//log.Printf("[INFO] successfully notified, messageID: %s", *r)
 }
 
 func main() {
@@ -73,6 +93,7 @@ func main() {
 
 	l := &Lambda{
 		bucket:            bucket.New(os.Getenv("CAPTURE_BUCKET_NAME"), s, config),
+		transcoder:        elastictranscoder.New(s, config),
 		captureRepository: repository.NewCaptureRepository(db, os.Getenv("CAPTURES_TABLE_NAME")),
 		notifier:          notifier.New(s, config).WithPhoneNumber(os.Getenv("SMS_RECEIVER")),
 	}

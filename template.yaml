@@ -18,6 +18,9 @@ Parameters:
   SMSReceiver:
     Description: "The phone number which receive the security notice."
     Type: String
+  ArmQueueName:
+    Type: String
+    Default: safeguard-arm-queue
 
 Resources:
   AuthorizerFunction:
@@ -107,6 +110,23 @@ Resources:
           DYNAMODB_ENDPOINT: ""
           DEVICE_TABLE_NAME: !Ref DeviceTable
 
+  ArmQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Ref ArmQueueName
+
+  ArmQueuePolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: SafeguardSQS
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - sqs:GetQueue*
+              - sqs:SendMessage
+
   ArmDeviceFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -116,6 +136,7 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref DeviceTable
         - AWSLambdaBasicExecutionRole
+        - !Ref ArmQueuePolicy
       Events:
         GetItem:
           Type: Api
@@ -139,6 +160,7 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref DeviceTable
         - AWSLambdaBasicExecutionRole
+        - !Ref ArmQueuePolicy
       Events:
         GetItem:
           Type: Api

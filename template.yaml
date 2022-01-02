@@ -126,6 +126,8 @@ Resources:
             Action:
               - sqs:GetQueue*
               - sqs:SendMessage
+      Roles:
+        - AWSLambdaBasicExecutionRole
 
   ArmDeviceFunction:
     Type: AWS::Serverless::Function

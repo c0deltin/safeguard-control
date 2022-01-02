@@ -54,7 +54,8 @@ func (l *Lambda) handler(e events.S3Event) {
 			Key:       aws.String(record.S3.Object.Key),
 		},
 		Output: &elastictranscoder.CreateJobOutput{
-			Key: aws.String(time.Now().String() + ".mp4"),
+			PresetId: aws.String("1351620000001-000010"), // Generic 720p
+			Key:      aws.String(time.Now().String() + ".mp4"),
 		},
 		PipelineId: aws.String("safeguard-transcoder"),
 	})

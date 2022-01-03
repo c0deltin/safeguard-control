@@ -23,7 +23,7 @@ Parameters:
     Default: safeguard-arm-queue
   ArmSnsTopicName:
     Type: String
-    Default: safeguard-arm-topic
+    Default: safeguard-arm-topic.fifo
 
 Resources:
   AuthorizerFunction:

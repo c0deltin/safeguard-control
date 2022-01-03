@@ -123,15 +123,9 @@ Resources:
     Properties:
       FifoTopic: true
       TopicName: !Ref ArmSnsTopicName
-
-  ArmSnsSubscription:
-    Type: AWS::SNS::Subscription
-    Properties:
-      Protocol: sqs
-      Endpoint: !GetAtt
-        - ArmQueue
-        - Arn
-      TopicArn: !Ref ArmSnsTopic
+      Subscription:
+        - Endpoint: !GetAtt ArmQueue.Arn
+          Protocol: sqs
 
   ArmSNSRole:
     Type: AWS::IAM::Role

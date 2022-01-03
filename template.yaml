@@ -21,6 +21,9 @@ Parameters:
   ArmQueueName:
     Type: String
     Default: safeguard-arm-queue
+  ArmSnsTopicName:
+    Type: String
+    Default: safeguard-arm-topic
 
 Resources:
   AuthorizerFunction:
@@ -115,7 +118,22 @@ Resources:
     Properties:
       QueueName: !Ref ArmQueueName
 
-  ArmQueueRole:
+  ArmSnsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      FifoTopic: true
+      TopicName: !Ref ArmSnsTopicName
+
+  ArmSnsSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: sqs
+      Endpoint: !GetAtt
+        - ArmQueue
+        - Arn
+      TopicArn: !Ref ArmSnsTopic
+
+  ArmSNSRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -128,15 +146,14 @@ Resources:
               - sts:AssumeRole
       Path: /
       Policies:
-        - PolicyName: SafeguardSQS
+        - PolicyName: SafeguardSNS
           PolicyDocument:
             Version: 2012-10-17
             Statement:
               - Effect: Allow
                 Action:
-                  - sqs:GetQueue*
-                  - sqs:SendMessage
-                Resource: !Sub ${ArmQueue.Arn}
+                  - sns:Publish
+                Resource: !Sub ${ArmSnsTopic.Arn}
 
   ArmDeviceFunction:
     Type: AWS::Serverless::Function
@@ -147,7 +164,7 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref DeviceTable
         - AWSLambdaBasicExecutionRole
-      Role: !Sub ${ArmQueueRole.Arn}
+      Role: !Sub ${ArmSNSRole.Arn}
       Events:
         GetItem:
           Type: Api
@@ -161,7 +178,7 @@ Resources:
         Variables:
           DYNAMODB_ENDPOINT: ""
           DEVICE_TABLE_NAME: !Ref DeviceTable
-          SQS_QUEUE_NAME: !Ref ArmQueue
+          SNS_TOPIC_ARN: !Ref ArmSnsTopic
 
   DisarmDeviceFunction:
     Type: AWS::Serverless::Function
@@ -172,7 +189,7 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref DeviceTable
         - AWSLambdaBasicExecutionRole
-      Role: !Sub ${ArmQueueRole.Arn}
+      Role: !Sub ${ArmSNSRole.Arn}
       Events:
         GetItem:
           Type: Api
@@ -186,7 +203,7 @@ Resources:
         Variables:
           DYNAMODB_ENDPOINT: ""
           DEVICE_TABLE_NAME: !Ref DeviceTable
-          SQS_QUEUE_NAME: !Ref ArmQueue
+          SNS_TOPIC_ARN: !Ref ArmSnsTopic
 
   StoreCaptureFunction:
     Type: AWS::Serverless::Function

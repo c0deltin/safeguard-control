@@ -20,10 +20,10 @@ Parameters:
     Type: String
   ArmQueueName:
     Type: String
-    Default: safeguard-arm-queue.fifo
+    Default: SafeguardQueue.fifo
   ArmSnsTopicName:
     Type: String
-    Default: safeguard-arm-topic.fifo
+    Default: SafeguardTopic.fifo
 
 Resources:
   AuthorizerFunction:

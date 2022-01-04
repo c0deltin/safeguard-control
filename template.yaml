@@ -18,9 +18,6 @@ Parameters:
   SMSReceiver:
     Description: "The phone number which receive the security notice."
     Type: String
-  ArmQueueName:
-    Type: String
-    Default: SafeguardQueue.fifo
   ArmSnsTopicName:
     Type: String
     Default: SafeguardTopic.fifo
@@ -116,7 +113,7 @@ Resources:
   ArmQueue:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: !Ref ArmQueueName
+      QueueName: SafeguardQueue.fifo
       FifoQueue: true
 
   ArmSnsTopic:

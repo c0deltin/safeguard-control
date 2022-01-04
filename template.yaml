@@ -117,6 +117,7 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: !Ref ArmQueueName
+      FifoQueue: true
 
   ArmSnsTopic:
     Type: AWS::SNS::Topic

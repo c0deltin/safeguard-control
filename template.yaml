@@ -112,43 +112,43 @@ Resources:
         Variables:
           DYNAMODB_ENDPOINT: ""
           DEVICE_TABLE_NAME: !Ref DeviceTable
+#
+#  ArmQueue:
+#    Type: AWS::SQS::Queue
+#    Properties:
+#      QueueName: !Ref ArmQueueName
+#      FifoQueue: true
 
-  ArmQueue:
-    Type: AWS::SQS::Queue
-    Properties:
-      QueueName: !Ref ArmQueueName
-      FifoQueue: true
+#  ArmSnsTopic:
+#    Type: AWS::SNS::Topic
+#    Properties:
+#      FifoTopic: true
+#      TopicName: !Ref ArmSnsTopicName
+#      Subscription:
+#        - Endpoint: !GetAtt ArmQueue.Arn
+#          Protocol: sqs
 
-  ArmSnsTopic:
-    Type: AWS::SNS::Topic
-    Properties:
-      FifoTopic: true
-      TopicName: !Ref ArmSnsTopicName
-      Subscription:
-        - Endpoint: !GetAtt ArmQueue.Arn
-          Protocol: sqs
-
-  ArmSNSRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      Path: /
-      Policies:
-        - PolicyName: SafeguardSNS
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Effect: Allow
-                Action:
-                  - sns:Publish
-                Resource: !Ref ArmSnsTopic
+#  ArmSNSRole:
+#    Type: AWS::IAM::Role
+#    Properties:
+#      AssumeRolePolicyDocument:
+#        Version: 2012-10-17
+#        Statement:
+#          - Effect: Allow
+#            Principal:
+#              Service: lambda.amazonaws.com
+#            Action:
+#              - sts:AssumeRole
+#      Path: /
+#      Policies:
+#        - PolicyName: SafeguardSNS
+#          PolicyDocument:
+#            Version: 2012-10-17
+#            Statement:
+#              - Effect: Allow
+#                Action:
+#                  - sns:Publish
+#                Resource: !Ref ArmSnsTopic
 
   ArmDeviceFunction:
     Type: AWS::Serverless::Function
@@ -173,7 +173,7 @@ Resources:
         Variables:
           DYNAMODB_ENDPOINT: ""
           DEVICE_TABLE_NAME: !Ref DeviceTable
-          SNS_TOPIC_ARN: !Ref ArmSnsTopic
+          #SNS_TOPIC_ARN: !Ref ArmSnsTopic
 
   DisarmDeviceFunction:
     Type: AWS::Serverless::Function
@@ -198,7 +198,7 @@ Resources:
         Variables:
           DYNAMODB_ENDPOINT: ""
           DEVICE_TABLE_NAME: !Ref DeviceTable
-          SNS_TOPIC_ARN: !Ref ArmSnsTopic
+          #SNS_TOPIC_ARN: !Ref ArmSnsTopic
 
   StoreCaptureFunction:
     Type: AWS::Serverless::Function

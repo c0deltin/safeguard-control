@@ -159,7 +159,7 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref DeviceTable
         - AWSLambdaBasicExecutionRole
-      Role: !Sub ${ArmSNSRole.Arn}
+      #Role: !Sub ${ArmSNSRole.Arn}
       Events:
         GetItem:
           Type: Api
@@ -184,7 +184,7 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref DeviceTable
         - AWSLambdaBasicExecutionRole
-      Role: !Sub ${ArmSNSRole.Arn}
+     # Role: !Sub ${ArmSNSRole.Arn}
       Events:
         GetItem:
           Type: Api

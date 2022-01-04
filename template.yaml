@@ -20,7 +20,7 @@ Parameters:
     Type: String
   ArmQueueName:
     Type: String
-    Default: safeguard-arm-queue
+    Default: safeguard-arm-queue.fifo
   ArmSnsTopicName:
     Type: String
     Default: safeguard-arm-topic.fifo

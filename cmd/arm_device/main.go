@@ -1,17 +1,19 @@
 package main
 
 import (
-	"github.com/aws/aws-sdk-go/aws/awserr"
+	"encoding/json"
 	"log"
 	"net/http"
 	"os"
 	"utils"
 
+	"codeltin.io/safeguard/control/arm-device/notifier"
 	"codeltin.io/safeguard/control/arm-device/repository"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
@@ -19,6 +21,7 @@ import (
 
 type Lambda struct {
 	deviceRepository repository.Device
+	notifier         *notifier.Notifier
 }
 
 func (l *Lambda) handler(r events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
@@ -28,7 +31,7 @@ func (l *Lambda) handler(r events.APIGatewayProxyRequest) (events.APIGatewayProx
 		return utils.Error(http.StatusBadRequest, "missing parameter \"deviceID\""), nil
 	}
 
-	err := l.deviceRepository.UpdateArmedStatus(deviceID, true)
+	result, err := l.deviceRepository.UpdateArmedStatus(deviceID, true)
 	if err != nil {
 		var status = http.StatusInternalServerError
 		if aErr, ok := err.(awserr.Error); ok {
@@ -40,6 +43,20 @@ func (l *Lambda) handler(r events.APIGatewayProxyRequest) (events.APIGatewayProx
 		log.Printf("[ERROR] failed to arm device %s, err: %v", deviceID, err)
 		return utils.Error(status, err.Error()), nil
 	}
+
+	by, err := json.Marshal(result.MarshalToRequest())
+	if err != nil {
+		log.Printf("[ERROR] failed to marshal device to json, err: %v", err)
+		return utils.Error(http.StatusInternalServerError, err.Error()), nil
+	}
+
+	msg, err := l.notifier.Send(string(by))
+	if err != nil {
+		log.Printf("[ERROR] failed to send message to topic, err: %v", err)
+		return utils.Error(http.StatusInternalServerError, err.Error()), nil
+	}
+
+	log.Printf("[INFO] successfully places message %s on topic", *msg)
 
 	return events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
@@ -60,6 +77,7 @@ func main() {
 
 	l := &Lambda{
 		deviceRepository: repository.NewDeviceRepository(db, os.Getenv("DEVICE_TABLE_NAME")),
+		notifier:         notifier.New(s, config).WithTopicArn(os.Getenv("SNS_TOPIC_ARN")),
 	}
 
 	lambda.Start(l.handler)

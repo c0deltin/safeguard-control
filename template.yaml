@@ -215,18 +215,18 @@ Resources:
           CAPTURES_TABLE_NAME: !Ref CapturesTable
           SMS_RECEIVER: !Ref SMSReceiver
 
-  CapturesBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: !Ref CapturesBucketName
-      AccessControl: Private
-      Tags:
-        - Key: name
-          Value: "Safeguard Captures"
-      NotificationConfiguration:
-        LambdaConfigurations:
-          - Event: 's3:ObjectCreated:*'
-            Function: !GetAtt StoreCaptureFunction.Arn
+#  CapturesBucket:
+#    Type: AWS::S3::Bucket
+#    Properties:
+#      BucketName: !Ref CapturesBucketName
+#      AccessControl: Private
+#      Tags:
+#        - Key: name
+#          Value: "Safeguard Captures"
+#      NotificationConfiguration:
+#        LambdaConfigurations:
+#          - Event: 's3:ObjectCreated:*'
+#            Function: !GetAtt StoreCaptureFunction.Arn
 
   LambdaInvokePermission:
     Type: AWS::Lambda::Permission

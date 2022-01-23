@@ -5,6 +5,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"model"
+	"strconv"
+	"time"
 
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 )
@@ -50,11 +52,18 @@ func (c *captureRepository) CountByObjectKey(deviceID, key string) (*int64, erro
 			":deviceID": {
 				S: aws.String(deviceID),
 			},
+			":captureDate": {
+				N: aws.String(strconv.FormatInt(time.Now().UnixMilli(), 10)),
+			},
 			":s3ObjectKey": {
 				S: aws.String(key),
 			},
 		},
-		KeyConditionExpression: aws.String("deviceID = :deviceID AND s3ObjectKey = :s3ObjectKey"),
+		ExpressionAttributeNames: map[string]*string{
+			"#s3ObjectKey": aws.String("s3ObjectKey"),
+		},
+		KeyConditionExpression: aws.String("deviceID = :deviceID AND captureDate < :captureDate"),
+		FilterExpression:       aws.String("#s3ObjectKey = :s3ObjectKey"),
 		ReturnConsumedCapacity: aws.String(dynamodb.ReturnConsumedCapacityNone),
 		TableName:              aws.String(c.table),
 	}

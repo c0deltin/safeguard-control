@@ -223,10 +223,10 @@ Resources:
       Tags:
         - Key: name
           Value: "Safeguard Captures"
-      NotificationConfiguration:
-        LambdaConfigurations:
-          - Event: 's3:ObjectCreated:*'
-            Function: !GetAtt StoreCaptureFunction.Arn
+#      NotificationConfiguration:
+#        LambdaConfigurations:
+#          - Event: 's3:ObjectCreated:*'
+#            Function: !GetAtt StoreCaptureFunction.Arn
 
 #  LambdaInvokePermission:
 #    Type: AWS::Lambda::Permission

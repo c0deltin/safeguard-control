@@ -197,24 +197,6 @@ Resources:
           DEVICE_TABLE_NAME: !Ref DeviceTable
           SNS_TOPIC_ARN: !Ref ArmSnsTopic
 
-  StoreCaptureFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: cmd/store_capture/
-      Handler: main
-      Policies:
-        - AWSLambdaBasicExecutionRole
-        - AmazonS3ReadOnlyAccess
-        - AmazonSNSFullAccess
-        - DynamoDBCrudPolicy:
-            TableName: !Ref CapturesTable
-      Environment:
-        Variables:
-          DYNAMODB_ENDPOINT: ""
-          CAPTURE_BUCKET_NAME: !Ref CapturesBucketName
-          CAPTURES_TABLE_NAME: !Ref CapturesTable
-          SMS_RECEIVER: !Ref SMSReceiver
-
   CapturesBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -223,10 +205,25 @@ Resources:
       Tags:
         - Key: name
           Value: "Safeguard Captures"
-      NotificationConfiguration:
-        LambdaConfigurations:
-          - Event: 's3:ObjectCreated:*'
-            Function: !GetAtt StoreCaptureFunction.Arn
+
+  StoreCaptureFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: cmd/store_capture/
+      Handler: main
+      Role: !GetAtt CapturesRole.Arn
+      Events:
+        S3Event:
+          Type: S3
+          Properties:
+            Bucket: !Ref CapturesBucket
+            Events: s3:ObjectCreated:*
+      Environment:
+        Variables:
+          DYNAMODB_ENDPOINT: ""
+          CAPTURE_BUCKET_NAME: !Ref CapturesBucketName
+          CAPTURES_TABLE_NAME: !Ref CapturesTable
+          SMS_RECEIVER: !Ref SMSReceiver
 
   LambdaInvokePermission:
     Type: AWS::Lambda::Permission
@@ -235,6 +232,52 @@ Resources:
       Action: lambda:InvokeFunction
       Principal: s3.amazonaws.com
       SourceArn: !Sub arn:aws:s3:::${CapturesBucket}
+
+  CapturesRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
+      Policies:
+        - PolicyName: WriteLogs
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - arn:aws:logs:*:*:*
+        - PolicyName: PushToSNS
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource:
+                  - !Sub 'arn:aws:sns:::${ArmSnsTopic}'
+        - PolicyName: DynamoDBCrud
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:*
+                Resource:
+                 - !Sub 'arn:aws:dynamodb:::${CapturesTable}'
 
   GetAllCapturesFunction:
     Type: AWS::Serverless::Function

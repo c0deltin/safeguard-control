@@ -215,15 +215,6 @@ Resources:
           CAPTURES_TABLE_NAME: !Ref CapturesTable
           SMS_RECEIVER: !Ref SMSReceiver
 
-  LambdaInvokePermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      FunctionName: !Ref StoreCaptureFunction
-      Action: lambda:InvokeFunction
-      Principal: s3.amazonaws.com
-      SourceArn: !Sub arn:aws:s3:::${CapturesBucket}
-
-
   CapturesBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -237,6 +228,13 @@ Resources:
           - Event: 's3:ObjectCreated:*'
             Function: !GetAtt StoreCaptureFunction.Arn
 
+#  LambdaInvokePermission:
+#    Type: AWS::Lambda::Permission
+#    Properties:
+#      FunctionName: !Ref StoreCaptureFunction
+#      Action: lambda:InvokeFunction
+#      Principal: s3.amazonaws.com
+#      SourceArn: !Sub arn:aws:s3:::${CapturesBucket}
 
   GetAllCapturesFunction:
     Type: AWS::Serverless::Function

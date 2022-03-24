@@ -51,7 +51,7 @@ func (l *Lambda) handler(r events.APIGatewayProxyRequest) (events.APIGatewayProx
 		return utils.Error(l.logger, http.StatusInternalServerError, err.Error()), nil
 	}
 
-	msg, err := l.notifier.Send(string(by))
+	msg, err := l.notifier.Send(deviceID, string(by))
 	if err != nil {
 		l.logger.Errorf("failed to send sns: %v", err)
 		return utils.Error(l.logger, http.StatusInternalServerError, err.Error()), nil

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"regexp"
 	"strings"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -139,10 +138,7 @@ func (l *Lambda) getGroups(t jwt.Token) []string {
 	claims, ok := t.Get("cognito:groups")
 	if ok {
 		for _, s := range claims.([]interface{}) {
-			m, _ := regexp.Match(`[0-9]+`, []byte(s.(string)))
-			if m {
-				result = append(result, s.(string))
-			}
+			result = append(result, s.(string))
 		}
 	}
 

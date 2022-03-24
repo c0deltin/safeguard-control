@@ -32,7 +32,7 @@ Resources:
       CodeUri: cmd/auth/
       Handler: main
       Policies:
-        - CloudWatchPutMetricPolicy: { }
+        - CloudWatchPutMetricPolicy: {}
       Environment:
         Variables:
           COGNITO_POOL_ID: "{{resolve:ssm:/safeguard/cognito/userpool/id}}"
@@ -152,7 +152,7 @@ Resources:
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Ref DeviceTable
-        - AWSLambdaBasicExecutionRole
+        - CloudWatchPutMetricPolicy: {}
       Events:
         GetItem:
           Type: Api
@@ -182,28 +182,6 @@ Resources:
         - Endpoint: !GetAtt ArmQueue.Arn
           Protocol: sqs
 
-  ArmSNSRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      Path: /
-      Policies:
-        - PolicyName: SafeguardSNS
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Effect: Allow
-                Action:
-                  - sns:Publish
-                Resource: !Ref ArmSnsTopic
-
   ArmDeviceFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -212,8 +190,9 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref DeviceTable
-        - AWSLambdaBasicExecutionRole
-      Role: !Sub ${ArmSNSRole.Arn}
+        - SNSPublishMessagePolicy:
+            TopicName: !Ref ArmSnsTopicName
+        - CloudWatchPutMetricPolicy: {}
       Events:
         GetItem:
           Type: Api
@@ -237,8 +216,9 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref DeviceTable
-        - AWSLambdaBasicExecutionRole
-      Role: !Sub ${ArmSNSRole.Arn}
+        - SNSPublishMessagePolicy:
+            TopicName: !Ref ArmSnsTopicName
+        - CloudWatchPutMetricPolicy: {}
       Events:
         GetItem:
           Type: Api
@@ -345,7 +325,7 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref CapturesTable
         - AmazonS3ReadOnlyAccess
-        - AWSLambdaBasicExecutionRole
+        - CloudWatchPutMetricPolicy: {}
       Events:
         GetItem:
           Type: Api
@@ -369,7 +349,7 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref CapturesTable
         - AmazonS3ReadOnlyAccess
-        - AWSLambdaBasicExecutionRole
+        - CloudWatchPutMetricPolicy: {}
       Events:
         GetItem:
           Type: Api

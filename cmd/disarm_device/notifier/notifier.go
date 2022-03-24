@@ -1,6 +1,8 @@
 package notifier
 
 import (
+	"time"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sns"
@@ -23,10 +25,12 @@ func (n *Notifier) WithTopicArn(t string) *Notifier {
 	return n
 }
 
-func (n *Notifier) Send(msg string) (*string, error) {
+func (n *Notifier) Send(deviceID, msg string) (*string, error) {
 	input := sns.PublishInput{
-		Message:  aws.String(msg),
-		TopicArn: aws.String(n.topicArn),
+		Message:                aws.String(msg),
+		MessageDeduplicationId: aws.String(deviceID + "_" + time.Now().Format(time.RFC3339)),
+		MessageGroupId:         aws.String(deviceID),
+		TopicArn:               aws.String(n.topicArn),
 	}
 
 	o, err := n.svc.Publish(&input)

@@ -1,4 +1,4 @@
-image: golang:1.17-buster
+image: golang:1.18-buster
 
 stages:
   #  - testing
@@ -28,6 +28,6 @@ deploy:
   script:
     - sam build
     - sam package --output-template-file packaged.yaml
-    - sam deploy --template-file packaged.yaml --no-fail-on-empty-changeset --parameter-overrides "SMSReceiver=\"$SMS_RECEIVER\""
+    - sam deploy --template-file packaged.yaml --no-fail-on-empty-changeset --parameter-overrides "SMSReceiver=\"$SMS_RECEIVER\" DomainName=\"$DOMAIN_NAME\""
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'

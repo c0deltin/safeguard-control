@@ -5,6 +5,7 @@ go 1.17
 require (
 	github.com/aws/aws-lambda-go v1.27.1
 	github.com/lestrrat-go/jwx v1.2.14
+	github.com/sirupsen/logrus v1.8.1
 )
 
 require (
@@ -17,4 +18,5 @@ require (
 	github.com/lestrrat-go/option v1.0.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	golang.org/x/crypto v0.0.0-20201217014255-9d1352758620 // indirect
+	golang.org/x/sys v0.0.0-20191026070338-33540a1f6037 // indirect
 )

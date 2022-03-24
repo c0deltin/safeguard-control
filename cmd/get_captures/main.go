@@ -2,8 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/aws/aws-lambda-go/events"
-	"log"
 	"model"
 	"net/http"
 	"os"
@@ -11,28 +9,31 @@ import (
 
 	"codeltin.io/safeguard/control/get-captures/repository"
 
+	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
+	"github.com/sirupsen/logrus"
 )
 
 type Lambda struct {
 	captureRepository repository.Capture
+	logger            *logrus.Logger
 }
 
 func (l *Lambda) handler(r events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	deviceID := r.PathParameters["deviceID"]
 	if deviceID == "" {
-		log.Println("[ERROR] missing path parameter deviceID")
-		return utils.Error(http.StatusBadRequest, "missing parameter \"deviceID\""), nil
+		l.logger.Errorf("missing path parameter %s", "deviceID")
+		return utils.Error(l.logger, http.StatusBadRequest, "missing parameter \"deviceID\""), nil
 	}
 
 	results, err := l.captureRepository.Find(deviceID)
 	if err != nil {
-		log.Printf("[ERROR] failed to find captures for device %s, err: %v", deviceID, err)
-		return utils.Error(http.StatusInternalServerError, err.Error()), nil
+		l.logger.Errorf("failed to find captures for device %s, err: %v", deviceID, err)
+		return utils.Error(l.logger, http.StatusInternalServerError, err.Error()), nil
 	}
 
 	var captures []model.Capture
@@ -47,8 +48,8 @@ func (l *Lambda) handler(r events.APIGatewayProxyRequest) (events.APIGatewayProx
 
 	by, err := json.Marshal(model.CapturesResponse{Captures: captures})
 	if err != nil {
-		log.Printf("[ERROR] failed to marshal response object, err: %v", err)
-		return utils.Error(http.StatusInternalServerError, err.Error()), nil
+		l.logger.Error(err)
+		return utils.Error(l.logger, http.StatusInternalServerError, err.Error()), nil
 	}
 
 	return events.APIGatewayProxyResponse{
@@ -70,7 +71,10 @@ func main() {
 
 	l := &Lambda{
 		captureRepository: repository.NewCaptureRepository(db, os.Getenv("CAPTURES_TABLE_NAME")),
+		logger:            logrus.New(),
 	}
+
+	l.logger.SetFormatter(&logrus.JSONFormatter{})
 
 	lambda.Start(l.handler)
 }

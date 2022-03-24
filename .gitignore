@@ -3,3 +3,7 @@
 .DS_Store
 
 .aws-sam/
+
+# local files
+local_deploy.sh
+packaged.yaml

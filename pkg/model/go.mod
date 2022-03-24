@@ -1,4 +1,3 @@
 module codeltin.io/safeguard/control/pkg/model
 
-go 1.17
-
+go 1.18

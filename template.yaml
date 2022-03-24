@@ -21,6 +21,9 @@ Parameters:
   ArmSnsTopicName:
     Type: String
     Default: SafeguardTopic.fifo
+  DomainName:
+    Type: String
+    Description: "The domain for this application."
 
 Resources:
   AuthorizerFunction:
@@ -29,10 +32,10 @@ Resources:
       CodeUri: cmd/auth/
       Handler: main
       Policies:
-        - AWSLambdaBasicExecutionRole
+        - CloudWatchPutMetricPolicy: { }
       Environment:
         Variables:
-          COGNITO_POOL_ID: "TEST" # todo
+          COGNITO_POOL_ID: "{{resolve:ssm:/safeguard/cognito/userpool/id}}"
 
   ControlAPI:
     Type: AWS::Serverless::Api
@@ -42,6 +45,34 @@ Resources:
         AllowOrigin: "'*'" # todo
         AllowMethods: "'OPTIONS,HEAD,GET,PUT,POST'"
         AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+      AccessLogSetting:
+        DestinationArn: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${ApiAccessLogGroup}'
+        Format: '$context.identity.sourceIp $context.authorizer.claims.sub [$context.requestTime] "$context.httpMethod $context.resourcePath $context.protocol" $context.status $context.requestId $context.awsEndpointRequestId $context.xrayTraceId $context.responseLatency $context.integrationLatency "$context.error.message"'
+      GatewayResponses:
+        ACCESS_DENIED:
+          ResponseTemplates:
+            application/json: "{\"message\": \"access denied\"}"
+        EXPIRED_TOKEN:
+          ResponseTemplates:
+            application/json: "{\"message\": \"token expired\"}"
+        UNAUTHORIZED:
+          ResponseTemplates:
+            application/json: "{\"message\": \"unauthorized\"}"
+        AUTHORIZER_FAILURE:
+          ResponseTemplates:
+            application/json: "{\"message\": \"internal server error\"}"
+        AUTHORIZER_CONFIGURATION_ERROR:
+          ResponseTemplates:
+            application/json: "{\"message\": \"internal server error\"}"
+        BAD_REQUEST_BODY:
+          ResponseTemplates:
+            application/json: "{\"message\": \"bad request\"}"
+        BAD_REQUEST_PARAMETERS:
+          ResponseTemplates:
+            application/json: "{\"message\": \"bad request\"}"
+        DEFAULT_5XX:
+          ResponseTemplates:
+            application/json: "{\"message\": \"internal server error\"}"
       Auth:
         Authorizers:
           AuthorizerFunction:
@@ -55,13 +86,39 @@ Resources:
               ValidationExpression: Bearer.*
               ReauthorizeEvery: 5
             CognitoAuthorizer:
-              UserPoolArn: COGNITO_POOL_ARN # todo
+              UserPoolArn: "{{resolve:ssm:/safeguard/cognito/userpool/arn}}"
+
+  ApiAccessLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/apigateway/AccessLog-Control-${ControlAPI}
+      RetentionInDays: 365
+
+  ApiGatewayPushToCloudWatchRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: "Push logs to CloudWatch logs from API Gateway"
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - apigateway.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
+
+  ApiGwAccountConfig:
+    Type: AWS::ApiGateway::Account
+    Properties:
+      CloudWatchRoleArn: !GetAtt ApiGatewayPushToCloudWatchRole.Arn
 
   ControlAPIBasePath:
     Type: AWS::ApiGateway::BasePathMapping
     Properties:
       BasePath: api
-      DomainName: codeltin.io #todo
+      DomainName: !Ref DomainName
       RestApiId: !Ref ControlAPI
       Stage: !Ref Stage
 

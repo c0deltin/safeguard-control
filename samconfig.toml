@@ -7,5 +7,5 @@ region = "eu-central-1"
 [default.deploy.parameters]
 region = "eu-central-1"
 stack_name = "control"
-capabilities = "CAPABILITY_IAM"
+capabilities = "CAPABILITY_NAMED_IAM"
 s3_bucket = "safeguard-lambda-artifacts"

@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"log"
 	"model"
 	"net/http"
 	"os"
@@ -17,17 +16,19 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
+	"github.com/sirupsen/logrus"
 )
 
 type Lambda struct {
 	deviceRepository repository.Device
+	logger           *logrus.Logger
 }
 
 func (l *Lambda) handler(r events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	deviceID := r.PathParameters["deviceID"]
 	if deviceID == "" {
-		log.Println("[ERROR] missing path parameter deviceID")
-		return utils.Error(http.StatusBadRequest, "missing parameter \"deviceID\""), nil
+		l.logger.Errorf("missing path parameter %s", "deviceID")
+		return utils.Error(l.logger, http.StatusBadRequest, "missing parameter \"deviceID\""), nil
 	}
 
 	device, err := l.deviceRepository.FindOne(deviceID)
@@ -37,14 +38,14 @@ func (l *Lambda) handler(r events.APIGatewayProxyRequest) (events.APIGatewayProx
 			status = http.StatusNotFound
 		}
 
-		log.Printf("[ERROR] failed to find device %s, err: %v", deviceID, err)
-		return utils.Error(status, err.Error()), nil
+		l.logger.Errorf("failed to find device %s, err: %v", deviceID, err)
+		return utils.Error(l.logger, status, err.Error()), nil
 	}
 
 	by, err := json.Marshal(model.DeviceResponse{Device: device.MarshalToRequest()})
 	if err != nil {
-		log.Printf("[ERROR] failed to marshal response object, err: %v", err)
-		return utils.Error(http.StatusInternalServerError, err.Error()), nil
+		l.logger.Errorf("failed to marshal response object, err: %v", err)
+		return utils.Error(l.logger, http.StatusInternalServerError, err.Error()), nil
 	}
 
 	return events.APIGatewayProxyResponse{
@@ -66,7 +67,10 @@ func main() {
 
 	l := &Lambda{
 		deviceRepository: repository.NewDeviceRepository(db, os.Getenv("DEVICE_TABLE_NAME")),
+		logger:           logrus.New(),
 	}
+
+	l.logger.SetFormatter(&logrus.JSONFormatter{})
 
 	lambda.Start(l.handler)
 }

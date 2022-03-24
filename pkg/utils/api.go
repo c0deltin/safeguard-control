@@ -3,17 +3,17 @@ package utils
 import (
 	"encoding/json"
 	"github.com/aws/aws-lambda-go/events"
-	"log"
+	"github.com/sirupsen/logrus"
 )
 
 type APIError struct {
 	Message string `json:"message"`
 }
 
-func Error(status int, msg string) events.APIGatewayProxyResponse {
+func Error(logger *logrus.Logger, status int, msg string) events.APIGatewayProxyResponse {
 	by, err := json.Marshal(APIError{Message: msg})
 	if err != nil {
-		log.Printf("[ERROR] failed to marshal error, err: %v", err)
+		logger.Error(err)
 	}
 
 	return events.APIGatewayProxyResponse{

@@ -1,10 +1,6 @@
 package main
 
 import (
-	"codeltin.io/safeguard/control/store-capture/repository"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
-	"log"
 	"model"
 	"os"
 	"time"
@@ -12,41 +8,46 @@ import (
 
 	"codeltin.io/safeguard/control/store-capture/bucket"
 	"codeltin.io/safeguard/control/store-capture/notifier"
+	"codeltin.io/safeguard/control/store-capture/repository"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
+	"github.com/sirupsen/logrus"
 )
 
 type Lambda struct {
 	bucket            *bucket.Bucket
 	captureRepository repository.Capture
+	logger            *logrus.Logger
 	notifier          *notifier.Notifier
 }
 
 func (l *Lambda) handler(e events.S3Event) {
 	if len(e.Records) == 0 {
-		log.Printf("[WARNING] no records for this event")
+		l.logger.Warnln("no records for this event")
 	}
 
 	recordKey := e.Records[0].S3.Object.Key
 
 	tags, err := l.bucket.GetObjectTags(recordKey)
 	if err != nil {
-		log.Printf("[ERROR] failed to get object tags for %s, err: %v", recordKey, err)
+		l.logger.Errorf("failed to get object tags for %s, err: %v", recordKey, err)
 		return
 	}
 
 	var deviceID *string
 	if deviceID = utils.GetTagValue(model.DeviceIDTag, tags); deviceID == nil {
-		log.Printf("[ERROR] cannot detect deviceID for object %s", recordKey)
+		l.logger.Errorf("cannot detect deviceID for object %s", recordKey)
 		return
 	}
 
 	count, err := l.captureRepository.CountByObjectKey(*deviceID, recordKey)
 	if err != nil || *count > 0 {
-		log.Printf("[ERROR] query failed or item already exists (deviceID: %s, key: %s, err: %v)", *deviceID, recordKey, err)
+		l.logger.Error("query failed or item already exists (deviceID: %s, key: %s, err: %v)", *deviceID, recordKey, err)
 		return
 	}
 
@@ -56,17 +57,17 @@ func (l *Lambda) handler(e events.S3Event) {
 		S3ObjectKey: recordKey,
 	})
 	if err != nil {
-		log.Printf("[ERROR] failed to store capture entry for %s in dynamoDB, err: %v", recordKey, err)
+		l.logger.Errorf("failed to store capture entry for %s in dynamoDB, err: %v", recordKey, err)
 		return
 	}
 
 	r, err := l.notifier.Send()
 	if err != nil {
-		log.Printf("[ERROR] failed to send notification sms, err: %v", err)
+		l.logger.Errorf("failed to send notification sms, err: %v", err)
 		return
 	}
 
-	log.Printf("[INFO] successfully notified, messageID: %s", *r)
+	l.logger.Infof("successfully notified, messageID: %s", *r)
 }
 
 func main() {
@@ -80,8 +81,11 @@ func main() {
 	l := &Lambda{
 		bucket:            bucket.New(os.Getenv("CAPTURE_BUCKET_NAME"), s, config),
 		captureRepository: repository.NewCaptureRepository(db, os.Getenv("CAPTURES_TABLE_NAME")),
+		logger:            logrus.New(),
 		notifier:          notifier.New(s, config).WithPhoneNumber(os.Getenv("SMS_RECEIVER")),
 	}
+
+	l.logger.SetFormatter(&logrus.JSONFormatter{})
 
 	lambda.Start(l.handler)
 }

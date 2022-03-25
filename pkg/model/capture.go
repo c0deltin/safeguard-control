@@ -19,7 +19,7 @@ func (c Capture) ConvertToDB() *CaptureDB {
 }
 
 type CaptureResponse struct {
-	Capture *Capture `json:"captures"`
+	Capture *Capture `json:"capture"`
 }
 
 type CapturesResponse struct {

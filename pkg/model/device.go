@@ -8,7 +8,7 @@ type Device struct {
 	Description string `json:"description"`
 }
 
-func (d Device) MarshalToDB() *DeviceDB {
+func (d Device) ConvertToDB() *DeviceDB {
 	return &DeviceDB{
 		ID:      d.ID,
 		IsArmed: d.IsArmed,
@@ -27,9 +27,22 @@ type DeviceDB struct {
 	Description string `json:"description"`
 }
 
-func (d DeviceDB) MarshalToRequest() *Device {
+func (d DeviceDB) ConvertToRequest() *Device {
 	return &Device{
 		ID:      d.ID,
 		IsArmed: d.IsArmed,
 	}
+}
+
+type DevicesResponse struct {
+	Devices []*Device `json:"devices"`
+}
+
+func ConvertSliceToRequest(devices []DeviceDB) []*Device {
+	var resp []*Device
+	for _, d := range devices {
+		resp = append(resp, d.ConvertToRequest())
+	}
+
+	return resp
 }

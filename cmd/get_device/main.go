@@ -42,7 +42,7 @@ func (l *Lambda) handler(r events.APIGatewayProxyRequest) (events.APIGatewayProx
 		return utils.Error(l.logger, status, err.Error()), nil
 	}
 
-	by, err := json.Marshal(model.DeviceResponse{Device: device.MarshalToRequest()})
+	by, err := json.Marshal(model.DeviceResponse{Device: device.ConvertToRequest()})
 	if err != nil {
 		l.logger.Errorf("failed to marshal response object, err: %v", err)
 		return utils.Error(l.logger, http.StatusInternalServerError, err.Error()), nil

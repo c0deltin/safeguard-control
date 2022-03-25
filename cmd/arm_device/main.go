@@ -45,7 +45,7 @@ func (l *Lambda) handler(r events.APIGatewayProxyRequest) (events.APIGatewayProx
 		return utils.Error(l.logger, status, err.Error()), nil
 	}
 
-	by, err := json.Marshal(result.MarshalToRequest())
+	by, err := json.Marshal(result.ConvertToRequest())
 	if err != nil {
 		l.logger.Error(err)
 		return utils.Error(l.logger, http.StatusInternalServerError, err.Error()), nil

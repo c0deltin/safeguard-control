@@ -144,6 +144,29 @@ Resources:
         - AttributeName: captureDate
           AttributeType: N
 
+  GetAllDevicesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: cmd/get_devices/
+      Handler: main
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref DeviceTable
+        - CloudWatchPutMetricPolicy: {}
+      Events:
+        GetItem:
+          Type: Api
+          Properties:
+            Path: /devices
+            Method: GET
+            RestApiId: !Ref ControlAPI
+            Auth:
+              Authorizer: AuthorizerFunction
+      Environment:
+        Variables:
+          DYNAMODB_ENDPOINT: ""
+          DEVICE_TABLE_NAME: !Ref DeviceTable
+
   GetDeviceFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -316,6 +339,7 @@ Resources:
                   - dynamodb:PutItem
                 Resource:
                  - !GetAtt CapturesTable.Arn
+
   GetAllCapturesFunction:
     Type: AWS::Serverless::Function
     Properties:

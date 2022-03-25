@@ -7,7 +7,7 @@ import (
 	"os"
 	"utils"
 
-	"codeltin.io/safeguard/control/get-captures/repository"
+	"codeltin.io/safeguard/control/get-devices/repository"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -19,36 +19,22 @@ import (
 )
 
 type Lambda struct {
-	captureRepository repository.Capture
-	logger            *logrus.Logger
+	deviceRepository repository.Device
+	logger           *logrus.Logger
 }
 
 func (l *Lambda) handler(r events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	deviceID := r.PathParameters["deviceID"]
-	if deviceID == "" {
-		l.logger.Errorf("missing path parameter %s", "deviceID")
-		return utils.Error(l.logger, http.StatusBadRequest, "missing parameter \"deviceID\""), nil
-	}
-
-	results, err := l.captureRepository.Find(deviceID)
+	devices, err := l.deviceRepository.Find()
 	if err != nil {
-		l.logger.Errorf("failed to find captures for device %s, err: %v", deviceID, err)
-		return utils.Error(l.logger, http.StatusInternalServerError, err.Error()), nil
+		var status = http.StatusInternalServerError
+
+		l.logger.Errorf("failed to fetch devices, err: %v", err)
+		return utils.Error(l.logger, status, err.Error()), nil
 	}
 
-	var captures []model.Capture
-	for _, x := range results {
-		captures = append(captures, *x.ConvertToRequest())
-	}
-
-	// prevent returning "null" in api response
-	if captures == nil {
-		captures = []model.Capture{}
-	}
-
-	by, err := json.Marshal(model.CapturesResponse{Captures: captures})
+	by, err := json.Marshal(model.DevicesResponse{Devices: model.ConvertSliceToRequest(devices)})
 	if err != nil {
-		l.logger.Error(err)
+		l.logger.Errorf("failed to marshal response objects, err: %v", err)
 		return utils.Error(l.logger, http.StatusInternalServerError, err.Error()), nil
 	}
 
@@ -70,8 +56,8 @@ func main() {
 	db := dynamodbiface.DynamoDBAPI(dynamodb.New(s, config))
 
 	l := &Lambda{
-		captureRepository: repository.NewCaptureRepository(db, os.Getenv("CAPTURES_TABLE_NAME")),
-		logger:            logrus.New(),
+		deviceRepository: repository.NewDeviceRepository(db, os.Getenv("DEVICE_TABLE_NAME")),
+		logger:           logrus.New(),
 	}
 
 	l.logger.SetFormatter(&logrus.JSONFormatter{})

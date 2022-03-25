@@ -10,7 +10,7 @@ type Capture struct {
 	S3ObjectKey string `json:"s3ObjectKey"`
 }
 
-func (c Capture) MarshalToDB() *CaptureDB {
+func (c Capture) ConvertToDB() *CaptureDB {
 	return &CaptureDB{
 		DeviceID:    c.DeviceID,
 		CaptureDate: c.CaptureDate,
@@ -34,7 +34,7 @@ type CaptureDB struct {
 	S3ObjectKey string `dynamodbav:"s3ObjectKey"`
 }
 
-func (c CaptureDB) MarshalToRequest() *Capture {
+func (c CaptureDB) ConvertToRequest() *Capture {
 	return &Capture{
 		DeviceID:    c.DeviceID,
 		CaptureDate: c.CaptureDate,

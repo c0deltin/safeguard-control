@@ -3,27 +3,27 @@ on:
   push:
     branches:
       - main
-  jobs:
-    build:
-      runs-on: ubuntu-22.04
-      steps:
-        - uses: actions/checkout@v3
-        - uses: actions/setup-go@v3
-          with:
-            go-version: '1.18'
-        - uses: actions/setup-python@v3
-          with:
-            python-version: '3.8'
-        - uses: aws-actions/setup-sam@v2
-        - uses: aws-actions/configure-aws-credentials@v1
-          with:
-            aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-            aws-region: ${{ secrets.AWS_REGION }}
-        - run: sam build
-        - run: sam package -output-template-file packaged.yaml
-        - run: >
-            sam deploy --template-file packaged.yaml --no-fail-on-empty-changeset \
-            --parameter-overrides "SMSReceiver=\"${{ secrets.SMS_RECEIVER }}\" DomainName=\"${{ secrets.DOMAIN_NAME }}\""
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '1.18'
+      - uses: actions/setup-python@v3
+        with:
+          python-version: '3.8'
+      - uses: aws-actions/setup-sam@v2
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - run: sam build
+      - run: sam package -output-template-file packaged.yaml
+      - run: >
+          sam deploy --template-file packaged.yaml --no-fail-on-empty-changeset \
+          --parameter-overrides "SMSReceiver=\"${{ secrets.SMS_RECEIVER }}\" DomainName=\"${{ secrets.DOMAIN_NAME }}\""
             
         

@@ -21,7 +21,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
       - run: sam build
-      - run: sam package -output-template-file packaged.yaml
+      - run: sam package --output-template-file packaged.yaml
       - run: >
           sam deploy --template-file packaged.yaml --no-fail-on-empty-changeset \
           --parameter-overrides "SMSReceiver=\"${{ secrets.SMS_RECEIVER }}\" DomainName=\"${{ secrets.DOMAIN_NAME }}\""

@@ -1,0 +1,15 @@
+go 1.18
+
+use (
+	./cmd/arm_device
+	./cmd/auth
+	./cmd/disarm_device
+	./cmd/get_capture
+	./cmd/get_captures
+	./cmd/get_device
+	./cmd/get_devices
+	./cmd/store_capture
+
+	./pkg/model
+	./pkg/utils
+)

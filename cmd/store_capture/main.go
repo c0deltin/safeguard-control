@@ -6,9 +6,9 @@ import (
 	"time"
 	"utils"
 
-	"codeltin.io/safeguard/control/store-capture/bucket"
-	"codeltin.io/safeguard/control/store-capture/notifier"
-	"codeltin.io/safeguard/control/store-capture/repository"
+	"github.com/c0deltin/safeguard-control/store-capture/bucket"
+	"github.com/c0deltin/safeguard-control/store-capture/notifier"
+	"github.com/c0deltin/safeguard-control/store-capture/repository"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"

@@ -6,8 +6,8 @@ import (
 	"os"
 	"utils"
 
-	"codeltin.io/safeguard/control/arm-device/notifier"
-	"codeltin.io/safeguard/control/arm-device/repository"
+	"github.com/c0deltin/safeguard-control/arm-device/notifier"
+	"github.com/c0deltin/safeguard-control/arm-device/repository"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"

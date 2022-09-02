@@ -7,7 +7,7 @@ import (
 	"os"
 	"utils"
 
-	"codeltin.io/safeguard/control/get-captures/repository"
+	"github.com/c0deltin/safeguard-control/get-captures/repository"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"

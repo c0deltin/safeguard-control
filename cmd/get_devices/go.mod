@@ -1,4 +1,4 @@
-module codeltin.io/safeguard/control/get-devices
+module github.com/c0deltin/safeguard-control/get-devices
 
 go 1.18
 

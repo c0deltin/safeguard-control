@@ -1,4 +1,4 @@
-module codeltin.io/safeguard/control/auth
+module github.com/c0deltin/safeguard-control/auth
 
 go 1.18
 

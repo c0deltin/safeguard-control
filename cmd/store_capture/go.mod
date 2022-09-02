@@ -1,4 +1,4 @@
-module codeltin.io/safeguard/control/store-capture
+module github.com/c0deltin/safeguard-control/store-capture
 
 go 1.18
 

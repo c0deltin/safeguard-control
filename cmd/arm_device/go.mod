@@ -1,4 +1,4 @@
-module codeltin.io/safeguard/control/arm-device
+module github.com/c0deltin/safeguard-control/arm-device
 
 go 1.18
 

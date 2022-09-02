@@ -1,4 +1,4 @@
-module codeltin.io/safeguard/control/get-captures
+module github.com/c0deltin/safeguard-control/get-captures
 
 go 1.18
 

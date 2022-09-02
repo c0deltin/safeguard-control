@@ -1,4 +1,4 @@
-module codeltin.io/safeguard/control/disarm-device
+module github.com/c0deltin/safeguard-control/disarm-device
 
 go 1.18
 
